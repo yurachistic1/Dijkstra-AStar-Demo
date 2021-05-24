@@ -31,8 +31,13 @@ export class MinHeap {
         }
     }
 
-    extract(){
+    extractMin(){
         let root = this.heap[0];
+
+        if (this.heap.length == 1){
+            this.heap.pop()
+            return root;
+        }
         let newRoot = this.heap[this.heap.length - 1];
 
         this.heap.pop();
@@ -77,6 +82,14 @@ export class MinHeap {
         }
 
         return root;
+    }
+
+    isEmpty(){
+        return this.heap.length === 0;
+    }
+
+    has(node){
+        return this.heap.map((i) => {return i.value;}).includes(node.value);
     }
 }
 
