@@ -2,9 +2,13 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
+
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=MuseoModerno:wght@100&display=swap" rel="stylesheet">
+
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.3.1/p5.js"></script>    
     <link rel="stylesheet" type="text/css" href="style.css">
-    <script type="module" src="js/sketch.js"></script>
+    <script type="module" src="js/main.js"></script>
 
   </head>
   
@@ -17,7 +21,8 @@
     <div id="controls">
       <span>
         <button id="start-button">Start</button>
-        <button>Reset</button>
+        <label for="speed-slider" class="lblFloat">Speed: </label>
+        <input type="range" class="slider" id="speed-slider" min="1" max="200" value="100" step="1" />
       </span>
       <span>
         <button id="erase-button">Eraser</button>

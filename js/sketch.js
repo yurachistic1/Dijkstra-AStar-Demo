@@ -13,17 +13,22 @@ let numRows;        // number of rows on the grid
 let numCols;        // number of columns on the grid
 let gridComponents; // map for grid items such as walls and start/end
 let isErasing;      // eraser boolean toggle
-
-document.getElementById("clear-button").onclick = init;
-document.getElementById("erase-button").onclick = () => {isErasing = !isErasing;}
-document.getElementById("start-button").onclick = () => {A_Star();}
+let isResetting;
+let isRunning;
+let slowDown;
 
 window.setup = function () {
   frameRate(30);
     init();
 }
 
+window.draw = function() {
+  background(255);
+  drawGrid();
+}
+
 function init(){
+
   let gridWidth = windowWidth * 0.8;
   let gridHeight = windowHeight * 0.7;
 
@@ -45,14 +50,15 @@ function init(){
   gridComponents.set(PATH, new Set())
 
   isErasing = false;
-}
+  setTimeout(() => {isResetting = false;}, 100)
+  isRunning = false;
 
-window.draw = function() {
-  background(255);
-  drawGrid();
+  slowDown = 100;
 }
 
 function drawGrid(){
+
+  stroke(100);
 
   for(let i = 0; i < numCols + 1; i++){
     line(i * lineSpacing, 0, i*lineSpacing, numRows * lineSpacing);
@@ -100,6 +106,20 @@ function drawGrid(){
   
 }
 
+async function reset(){
+
+  isResetting = true;
+
+  await sleep(300);
+
+  gridComponents.set(EDGE, new Set());
+  gridComponents.set(EXPLORED, new Set());
+  gridComponents.set(PATH, new Set())
+
+  setTimeout(() => {isResetting = false;}, 200)
+  isRunning = false;
+}
+
 function mouseDraw(){
 
   let col = floor(mouseX / lineSpacing);
@@ -107,6 +127,8 @@ function mouseDraw(){
 
   const [startX, startY] = gridComponents.get(START);
   const [endX, endY] = gridComponents.get(END);
+  
+  if(isRunning){return;}
 
   if (col == startX && row == startY){return;}
   if (col == endX && row == endY){return;}
@@ -140,16 +162,19 @@ async function reconstructPath(cameFrom, current){
   let total_path = [current];
 
   while (cameFrom.has(current)){
+      if(isResetting) {return;}
       current = cameFrom.get(current);
       total_path.push(current);
       gridComponents.get(PATH).add(current);
-      await sleep(100)
+      await sleep(slowDown);
   }
   return total_path.reverse();
 }
 
 // A* finds a EDGE from start to goal.
 async function A_Star(){
+
+  isRunning = true;
 
   const [startX, startY] = gridComponents.get(START);
   const [endX, endY] = gridComponents.get(END);
@@ -174,7 +199,9 @@ async function A_Star(){
 
   while (!openSet.isEmpty()) {
 
-    await sleep(100);
+    if (isResetting){return;}
+
+    await sleep(slowDown);
 
     let current = openSet.extractMin().value; 
     gridComponents.get(EDGE).delete(current);
@@ -241,6 +268,14 @@ function difference(setA, setB) {
   return _difference
 }
 
+function union(setA, setB) {
+  let _union = new Set(setA)
+  for (let elem of setB) {
+      _union.add(elem)
+  }
+  return _union
+}
+
 function getWithDefault(map, key, def){
   if(!map.has(key)){
     return def
@@ -252,3 +287,13 @@ function getWithDefault(map, key, def){
 async function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
+
+function switchEraser(){
+  isErasing = !isErasing;
+}
+
+function setSlowDown(x){
+  slowDown = 200 - x;
+}
+
+export {init, switchEraser, A_Star, reset, setSlowDown, isErasing}

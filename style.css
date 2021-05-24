@@ -1,6 +1,16 @@
+:root {
+  font-family: 'MuseoModerno', cursive;
+  font-size: 10px;
+}
+
 html, body {
   margin: 0;
   padding: 0;
+  font-size: 2rem;
+}
+
+h1 {
+  margin: 0;
 }
 
 body {
@@ -13,6 +23,57 @@ body {
   align-items: center;
 }
 
-canvas {
-  display: block;
+#controls{
+  display: flex;
+  justify-content: space-between;
+}
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+  padding: 0.3rem 1rem;
+  border-radius: 10px;
+  border: 2px solid #ee582a;
+  background-color: ivory;
+  box-shadow: 1px 3px #999;
+}
+
+button:active {
+  background-color: #fcf8c4;
+  box-shadow: 1px 1px #666;
+  transform: translateY(2px);
+}
+
+.slider {
+  -webkit-appearance: none;
+  width: 40%;
+  height: 1rem;
+  border-radius: 1rem;  
+  background: #d3d3d3;
+  outline: none;
+  opacity: 0.7;
+  -webkit-transition: .2s;
+  transition: opacity .2s;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%; 
+  background: #ee582a;
+  cursor: pointer;
+}
+
+.slider::-moz-range-thumb {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: #ee582a;
+  cursor: pointer;
+}
+
+.slider:hover {
+  opacity: 1; /* Fully shown on mouse-over */
 }
