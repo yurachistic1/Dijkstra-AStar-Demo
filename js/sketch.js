@@ -16,6 +16,8 @@ let numCols;        // number of columns on the grid
 let gridComponents; // map for grid items such as walls and start/end
 let isErasing;      // eraser boolean toggle
 let isRunning;      // boolean to indicate if visualisation is in progress
+let movingStart;    // boolean to indicate start is being moved
+let movingEnd       // boolean to indicate end is being moved
 let slowDown;       // number of milliseconds A* is slowed downed by in each cycle
 
 // setters
@@ -40,11 +42,36 @@ window.draw = function() {
   drawGrid();
 }
 
+window.mousePressed = function(){
+  if(isRunning){return;}
+  let col = floor(mouseX / lineSpacing);
+  let row = floor(mouseY / lineSpacing);
+
+  const [startX, startY] = gridComponents.get(START);
+  const [endX, endY] = gridComponents.get(END);
+  
+  if (col == startX && row == startY){movingStart = true;}
+  if (col == endX && row == endY){movingEnd = true;}
+}
+
+window.mouseReleased = function(){
+  movingStart = false;
+  movingEnd = false;
+}
+
 window.mouseDragged = function(){
-  mouseDraw();
+  if(isRunning){return;}
+  if(movingStart){
+    moveStart();
+  } else if (movingEnd){
+    moveEnd();
+  } else {
+    mouseDraw();
+  }
 }
 
 window.mouseClicked = function (){
+  if(isRunning){return;}
   mouseDraw();
 }
 
@@ -92,9 +119,6 @@ function drawGrid(){
   }
 
   // all the different types of cells
-  const wallCells = gridComponents.get(WALLS);
-  drawCells(wallCells, "#364547");
-
   const edgeCells = gridComponents.get(EDGE);
   drawCells(edgeCells, "#f98404");
 
@@ -104,7 +128,9 @@ function drawGrid(){
 
   const pathCells = gridComponents.get(PATH);
   drawCells(pathCells, "#867ae9");
-  
+
+  const wallCells = gridComponents.get(WALLS);
+  drawCells(wallCells, "#364547");
 
   const [startX, startY] = gridComponents.get(START);
   fill('#9fe6a0');
@@ -137,9 +163,6 @@ async function reset(){
 
 function mouseDraw(){
 
-  //cannot draw if A* is running
-  if(isRunning){return;}
-
   let col = floor(mouseX / lineSpacing);
   let row = floor(mouseY / lineSpacing);
 
@@ -161,6 +184,20 @@ function mouseDraw(){
   }
 }
 
+function moveStart(){
+  let col = floor(mouseX / lineSpacing);
+  let row = floor(mouseY / lineSpacing);
+
+  gridComponents.set(START, [col, row])
+}
+
+function moveEnd(){
+  let col = floor(mouseX / lineSpacing);
+  let row = floor(mouseY / lineSpacing);
+
+  gridComponents.set(END, [col, row])
+}
+
 // --- A* ----
 
 // Code adopted from wikipedia A* pseudocode
@@ -173,6 +210,7 @@ async function reconstructPath(cameFrom, current){
       gridComponents.get(PATH).add(current);
       await sleep(slowDown);
   }
+  isRunning = false;
 }
 
 // A* finds a path from start to goal.
@@ -242,6 +280,7 @@ async function A_Star(){
     }
   }
   // Open set is empty but goal was never reached
+  isRunning = false;
   return [];
 }
 
