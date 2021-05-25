@@ -55,8 +55,6 @@ export class MinHeap {
             let child1 = child1Index < this.heap.length ? this.heap[child1Index] : Infinity;
             let child2 = child2Index < this.heap.length ? this.heap[child2Index] : Infinity;
 
-
-
             if(parent <= child1 && parent <= child2){
                 break;
             } else if (parent > child1 && parent <= child2){
@@ -78,9 +76,7 @@ export class MinHeap {
                     parentIndex = child2Index;
                 }
             }
-
         }
-
         return root;
     }
 
@@ -99,6 +95,7 @@ export class Node {
         this.value = value;
     }
 
+    // enables node comparison via <, >
     valueOf(){
         return this.score;
     }

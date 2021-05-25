@@ -34,9 +34,11 @@ function clearButton(){
     reset(); 
     init();
     document.getElementById("start-button").textContent = "Start";
+    document.getElementById('speed-slider').value = 100;
+
 }
 
 function speedSlider(){
     let val = document.getElementById('speed-slider').value;
-    setSlowDown(val);
+    setSlowDown(200 - val);
 }

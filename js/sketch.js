@@ -1,6 +1,8 @@
 import { MinHeap, Node } from "./minHeap.js";
 
 const APPROX_LINE_SPACING = 20; //target distance between gridlines (pixels)
+
+// Some handy names for map keys
 const WALLS = 1;
 const START = 2;
 const END = 3;
@@ -13,9 +15,20 @@ let numRows;        // number of rows on the grid
 let numCols;        // number of columns on the grid
 let gridComponents; // map for grid items such as walls and start/end
 let isErasing;      // eraser boolean toggle
-let isResetting;
-let isRunning;
-let slowDown;
+let isRunning;      // boolean to indicate if visualisation is in progress
+let slowDown;       // number of milliseconds A* is slowed downed by in each cycle
+
+// setters
+
+function switchEraser(){
+  isErasing = !isErasing;
+}
+
+function setSlowDown(x){
+  slowDown = x;
+}
+
+// p5js functions
 
 window.setup = function () {
   frameRate(30);
@@ -27,8 +40,17 @@ window.draw = function() {
   drawGrid();
 }
 
-function init(){
+window.mouseDragged = function(){
+  mouseDraw();
+}
 
+window.mouseClicked = function (){
+  mouseDraw();
+}
+
+// setup and draw functions
+
+function init(){
   let gridWidth = windowWidth * 0.8;
   let gridHeight = windowHeight * 0.7;
 
@@ -50,7 +72,6 @@ function init(){
   gridComponents.set(PATH, new Set())
 
   isErasing = false;
-  setTimeout(() => {isResetting = false;}, 100)
   isRunning = false;
 
   slowDown = 100;
@@ -60,6 +81,8 @@ function drawGrid(){
 
   stroke(100);
 
+
+  // gridlines
   for(let i = 0; i < numCols + 1; i++){
     line(i * lineSpacing, 0, i*lineSpacing, numRows * lineSpacing);
   }
@@ -68,33 +91,20 @@ function drawGrid(){
     line(0, i * lineSpacing, numCols * lineSpacing, i * lineSpacing);
   }
 
+  // all the different types of cells
   const wallCells = gridComponents.get(WALLS);
-  fill(40)
-  for(let cell of wallCells){
-    const [cellX, cellY] = cell.split(",");
-    square(cellX * lineSpacing, cellY * lineSpacing, lineSpacing);
-  }
+  drawCells(wallCells, "#364547");
 
   const edgeCells = gridComponents.get(EDGE);
-  fill("#f98404")
-  for(let cell of edgeCells){
-    const [cellX, cellY] = cell.split(",");
-    square(cellX * lineSpacing, cellY * lineSpacing, lineSpacing);
-  }
+  drawCells(edgeCells, "#f98404");
 
   const exploredCells = gridComponents.get(EXPLORED);
-  fill("#b6c9f0")
-  for(let cell of exploredCells){
-    const [cellX, cellY] = cell.split(",");
-    square(cellX * lineSpacing, cellY * lineSpacing, lineSpacing);
-  }
+  drawCells(exploredCells, "#b6c9f0");
+  
 
   const pathCells = gridComponents.get(PATH);
-  fill("#867ae9")
-  for(let cell of pathCells){
-    const [cellX, cellY] = cell.split(",");
-    square(cellX * lineSpacing, cellY * lineSpacing, lineSpacing);
-  }
+  drawCells(pathCells, "#867ae9");
+  
 
   const [startX, startY] = gridComponents.get(START);
   fill('#9fe6a0');
@@ -106,21 +116,29 @@ function drawGrid(){
   
 }
 
+function drawCells(cells, colour){
+  fill(colour);
+  for(let cell of cells){
+    const [cellX, cellY] = cell.split(",");
+    square(cellX * lineSpacing, cellY * lineSpacing, lineSpacing);
+  }
+
+}
+
 async function reset(){
 
-  isResetting = true;
-
+  isRunning = false;
   await sleep(300);
 
   gridComponents.set(EDGE, new Set());
   gridComponents.set(EXPLORED, new Set());
   gridComponents.set(PATH, new Set())
-
-  setTimeout(() => {isResetting = false;}, 200)
-  isRunning = false;
 }
 
 function mouseDraw(){
+
+  //cannot draw if A* is running
+  if(isRunning){return;}
 
   let col = floor(mouseX / lineSpacing);
   let row = floor(mouseY / lineSpacing);
@@ -128,8 +146,6 @@ function mouseDraw(){
   const [startX, startY] = gridComponents.get(START);
   const [endX, endY] = gridComponents.get(END);
   
-  if(isRunning){return;}
-
   if (col == startX && row == startY){return;}
   if (col == endX && row == endY){return;}
 
@@ -145,33 +161,21 @@ function mouseDraw(){
   }
 }
 
-window.mouseDragged = function(){
-  mouseDraw();
-}
-
-window.mouseClicked = function (){
-  mouseDraw();
-}
-
-// -----------
 // --- A* ----
-// -----------
 
+// Code adopted from wikipedia A* pseudocode
 
 async function reconstructPath(cameFrom, current){
-  let total_path = [current];
 
   while (cameFrom.has(current)){
-      if(isResetting) {return;}
+      if(!isRunning) {return;}
       current = cameFrom.get(current);
-      total_path.push(current);
       gridComponents.get(PATH).add(current);
       await sleep(slowDown);
   }
-  return total_path.reverse();
 }
 
-// A* finds a EDGE from start to goal.
+// A* finds a path from start to goal.
 async function A_Star(){
 
   isRunning = true;
@@ -179,6 +183,7 @@ async function A_Star(){
   const [startX, startY] = gridComponents.get(START);
   const [endX, endY] = gridComponents.get(END);
   const distanceStartToGoal = manhattanDistance(startX, startY, endX, endY);
+
   // The set of discovered nodes that may need to be (re-)expanded.
   // Initially, only the start node is known.
   let openSet = new MinHeap();
@@ -193,13 +198,14 @@ async function A_Star(){
   gScore.set(`${startX},${startY}`, 0);
 
   // For node n, fScore[n] := gScore[n] + heuristic(n). fScore[n] represents our current best guess as to
-  // how short a EDGE from start to finish can be if it goes through n.
+  // how short a path from start to finish can be if it goes through n.
   let fScore = new Map();
   fScore.set(`${startX},${startY}`, distanceStartToGoal);
 
   while (!openSet.isEmpty()) {
 
-    if (isResetting){return;}
+    //abort if running was interrupted via reset or clear buttons.
+    if (!isRunning){return;}
 
     await sleep(slowDown);
 
@@ -208,6 +214,7 @@ async function A_Star(){
     gridComponents.get(EXPLORED).add(current);
     const [currX, currY] = current.split(",");
     
+    // goal reached
     if (current === `${endX},${endY}`){
         return reconstructPath(cameFrom, current);
     }
@@ -215,18 +222,17 @@ async function A_Star(){
     let neighbours = getNeighbours(currX, currY);
     for (let neighbour of neighbours){
       const [neighbourX, neighbourY] = neighbour.split(",");
-      // d(current,neighbor) is the weight of the edge from current to neighbor
       // tentative_gScore is the distance from start to the neighbor through current
       let edgeWeight = 1;
       let tentative_gScore = getWithDefault(gScore, current, Infinity) + edgeWeight;
       if (tentative_gScore < getWithDefault(gScore, neighbour, Infinity)){
-        // This EDGE to neighbor is better than any previous one. Record it!
+        // This path to neighbor is better than any previous one. Record it!
         cameFrom.set(neighbour, current);
         gScore.set(neighbour, tentative_gScore);
 
-        let h = manhattanDistance(neighbourX, neighbourY, endX, endY);
+        let heuristic = manhattanDistance(neighbourX, neighbourY, endX, endY);
 
-        fScore.set(neighbour, getWithDefault(gScore, neighbour, Infinity) + h)
+        fScore.set(neighbour, getWithDefault(gScore, neighbour, Infinity) + heuristic)
         let node = new Node(fScore.get(neighbour), neighbour);
         if (!openSet.has(node)){
             openSet.insert(node);
@@ -238,6 +244,8 @@ async function A_Star(){
   // Open set is empty but goal was never reached
   return [];
 }
+
+// A* helper functions 
 
 function manhattanDistance(x1, y1, x2, y2){
   return abs(x1 - x2) + abs(y1 - y2);
@@ -257,6 +265,8 @@ function getNeighbours(x, y){
   return difference(new Set(neighbours), gridComponents.get(WALLS));
 }
 
+// utility functions
+
 function difference(setA, setB) {
   let _difference = new Set(setA)
   for (let elem of setA) {
@@ -266,14 +276,6 @@ function difference(setA, setB) {
       
   }
   return _difference
-}
-
-function union(setA, setB) {
-  let _union = new Set(setA)
-  for (let elem of setB) {
-      _union.add(elem)
-  }
-  return _union
 }
 
 function getWithDefault(map, key, def){
@@ -286,14 +288,6 @@ function getWithDefault(map, key, def){
 
 async function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-function switchEraser(){
-  isErasing = !isErasing;
-}
-
-function setSlowDown(x){
-  slowDown = 200 - x;
 }
 
 export {init, switchEraser, A_Star, reset, setSlowDown, isErasing}
