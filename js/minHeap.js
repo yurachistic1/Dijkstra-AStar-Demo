@@ -1,3 +1,4 @@
+
 export class MinHeap {
     constructor(){
         this.heap = [];
@@ -10,73 +11,60 @@ export class MinHeap {
     insert(node){
 
         this.heap.push(node);
-        let childIndex = this.heap.length - 1;
+        let index = this.heap.length - 1;
+        const current = this.heap[index];
 
-        while(true){
+        while(index > 0){
             
-            let parentIndex = floor((childIndex - 1) / 2);
-
-            if(parentIndex == -1){break;}
-
-            let child = this.heap[childIndex];
+            let parentIndex = Math.floor((index - 1) / 2);
             let parent = this.heap[parentIndex];
-            if (child >= parent){
+
+            if (parent.lessThan(current)){
                 break;
             } else {
-                this.heap[childIndex] = parent;
-                this.heap[parentIndex] = child;
+                this.heap[parentIndex] = current;
+                this.heap[index] = parent;
+                index = parentIndex;
             }
-
-            childIndex = parentIndex;
         }
     }
 
     extractMin(){
         let root = this.heap[0];
+        const end = this.heap.pop();
+        this.heap[0] = end;
 
-        if (this.heap.length == 1){
-            this.heap.pop()
-            return root;
-        }
-        let newRoot = this.heap[this.heap.length - 1];
-
-        this.heap.pop();
-        this.heap[0] = newRoot;
-
-        let parentIndex = 0;
+        let index = 0;
+        const length = this.heap.length;
+        const current = this.heap[0];
 
         while(true){
 
-            let parent = this.heap[parentIndex];
+            let leftChildIndex = 2 * index + 1;
+            let rightChildIndex = 2 * index + 2;
+            let leftChild, rightChild;
+            let swap = null;
 
-            let child1Index = 2 * parentIndex + 1;
-            let child2Index = 2 * parentIndex + 2;
-
-            let child1 = child1Index < this.heap.length ? this.heap[child1Index] : Infinity;
-            let child2 = child2Index < this.heap.length ? this.heap[child2Index] : Infinity;
-
-            if(parent <= child1 && parent <= child2){
-                break;
-            } else if (parent > child1 && parent <= child2){
-                this.heap[parentIndex] = child1;
-                this.heap[child1Index] = parent;
-                parentIndex = child1Index;
-            } else if (parent <= child1 && parent > child2){
-                this.heap[parentIndex] = child2;
-                this.heap[child2Index] = parent;
-                parentIndex = child2Index;
-            } else {
-                if (child1 < child2) {
-                    this.heap[parentIndex] = child1;
-                    this.heap[child1Index] = parent;
-                    parentIndex = child1Index;
-                } else {
-                    this.heap[parentIndex] = child2;
-                    this.heap[child2Index] = parent;
-                    parentIndex = child2Index;
-                }
+            if (leftChildIndex < length) {
+                leftChild = this.heap[leftChildIndex];
+                if (leftChild.lessThan(current)) swap = leftChildIndex;
             }
+
+            if (rightChildIndex < length) {
+                rightChild = this.heap[rightChildIndex];
+                if (
+                  (swap === null && rightChild.lessThan(current)) ||
+                  (swap !== null && rightChild.lessThan(leftChild))
+                )
+                  swap = rightChildIndex;
+            }
+
+            if (swap === null) break;
+            this.heap[index] = this.heap[swap];
+            this.heap[swap] = current;
+            index = swap;
         }
+        
         return root;
     }
 
@@ -90,14 +78,20 @@ export class MinHeap {
 }
 
 export class Node {
-    constructor(score, value){
+    constructor(score, value, inOrder){
         this.score = score;
         this.value = value;
+        this.inOrder = inOrder;
     }
 
-    // enables node comparison via <, >
-    valueOf(){
-        return this.score;
+    lessThan(node){
+        if (this.score < node.score){
+            return true;
+        } else if (this.score === node.score){
+            return this.inOrder < node.inOrder;
+        } else {
+            return false;
+        }
     }
 
     toString(){
