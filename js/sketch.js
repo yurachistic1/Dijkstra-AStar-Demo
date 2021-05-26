@@ -120,24 +120,24 @@ function drawGrid(){
 
   // all the different types of cells
   const edgeCells = gridComponents.get(EDGE);
-  drawCells(edgeCells, "#f98404");
+  drawCells(edgeCells, 'rgba(240, 228, 66, 1)');
 
   const exploredCells = gridComponents.get(EXPLORED);
-  drawCells(exploredCells, "#b6c9f0");
+  drawCells(exploredCells, "rgba(86, 180, 233, 1)");
   
 
   const pathCells = gridComponents.get(PATH);
-  drawCells(pathCells, "#867ae9");
+  drawCells(pathCells, 'rgba(204, 121, 167, 1)');
 
   const wallCells = gridComponents.get(WALLS);
   drawCells(wallCells, "#364547");
 
   const [startX, startY] = gridComponents.get(START);
-  fill('#9fe6a0');
+  fill('rgba(0, 158, 115, 1)');
   square(startX * lineSpacing, startY * lineSpacing, lineSpacing);
 
   const [endX, endY] = gridComponents.get(END);
-  fill('#f55c47');
+  fill('rgba(213, 94, 0, 1)');
   square(endX * lineSpacing, endY * lineSpacing, lineSpacing);
   
 }
@@ -204,13 +204,17 @@ function moveEnd(){
 
 async function reconstructPath(cameFrom, current){
 
+  let total = 0;
+
   while (cameFrom.has(current)){
       if(!isRunning) {return;}
       current = cameFrom.get(current);
       gridComponents.get(PATH).add(current);
+      total += 1;
       await sleep(slowDown);
   }
   isRunning = false;
+  console.log(total)
 }
 
 // A* finds a path from start to goal.
@@ -220,12 +224,12 @@ async function A_Star(){
 
   const [startX, startY] = gridComponents.get(START);
   const [endX, endY] = gridComponents.get(END);
-  const distanceStartToGoal = manhattanDistance(startX, startY, endX, endY);
+  const distanceStartToGoal = distance(startX, startY, endX, endY);
 
   // The set of discovered nodes that may need to be (re-)expanded.
   // Initially, only the start node is known.
   let openSet = new MinHeap();
-  openSet.insert(new Node(distanceStartToGoal, `${startX},${startY}`));
+  openSet.insert(new Node(distanceStartToGoal, `${startX},${startY}`, 1));
 
   // For node n, cameFrom[n] is the node immediately preceding it on the cheapest EDGE from start
   // to n currently known.
@@ -261,17 +265,17 @@ async function A_Star(){
     for (let neighbour of neighbours){
       const [neighbourX, neighbourY] = neighbour.split(",");
       // tentative_gScore is the distance from start to the neighbor through current
-      let edgeWeight = 1;
-      let tentative_gScore = getWithDefault(gScore, current, Infinity) + edgeWeight;
-      if (tentative_gScore < getWithDefault(gScore, neighbour, Infinity)){
+      let edgeWeight = distance(neighbourX, neighbourY, currX, currY);
+      let tentative_gScore = +getWithDefault(gScore, current, Infinity) + edgeWeight;
+      if (tentative_gScore < +getWithDefault(gScore, neighbour, Infinity)){
         // This path to neighbor is better than any previous one. Record it!
         cameFrom.set(neighbour, current);
         gScore.set(neighbour, tentative_gScore);
 
-        let heuristic = manhattanDistance(neighbourX, neighbourY, endX, endY);
+        let heuristic = distance(neighbourX, neighbourY, endX, endY);
 
-        fScore.set(neighbour, getWithDefault(gScore, neighbour, Infinity) + heuristic)
-        let node = new Node(fScore.get(neighbour), neighbour);
+        fScore.set(neighbour, +getWithDefault(gScore, neighbour, Infinity) + heuristic)
+        let node = new Node(fScore.get(neighbour), neighbour, fScore.size);
         if (!openSet.has(node)){
             openSet.insert(node);
             gridComponents.get(EDGE).add(neighbour);
@@ -286,22 +290,44 @@ async function A_Star(){
 
 // A* helper functions 
 
-function manhattanDistance(x1, y1, x2, y2){
-  return abs(x1 - x2) + abs(y1 - y2);
+function distance( x1,  y1,  x2,  y2) {
+  let  dx = abs(+x2 - x1);
+  let  dy = abs(+y2 - y1);
+
+  let  a = min(+dx, +dy);
+  let  b = max(+dx, +dy);
+
+  let diagonalSteps = +a;
+  let straightSteps = +b - a;
+
+  return 577 * diagonalSteps + 408 * straightSteps;
 }
 
 function getNeighbours(x, y){
-  let neighbours = [
-    [+x + 1, y],
-    [+x - 1, y],
-    [x, +y + 1],
-    [x, +y - 1]
-  ]
+
+  let n_e = filterSuitable([[+x + 1, y], [x, +y - 1]])
+  if (n_e.length >= 1){n_e = n_e.concat(filterSuitable([[+x + 1, +y - 1]]));}
+
+  let s_e = filterSuitable([[+x + 1, y], [x, +y + 1]])
+  if (s_e.length >= 1){s_e = s_e.concat(filterSuitable([[+x + 1, +y + 1]]));}
+
+  let s_w = filterSuitable([[+x - 1, y], [x, +y + 1]])
+  if (s_w.length >= 1){s_w = s_w.concat(filterSuitable([[+x - 1, +y + 1]]));}
+
+  let n_w = filterSuitable([[+x - 1, y], [x, +y - 1]])
+  if (n_w.length >= 1){n_w = n_w.concat(filterSuitable([[+x - 1, +y - 1]]));}
+
+  return new Set([...n_e, ...s_e, ...s_w, ...n_w])
+}
+
+function filterSuitable(coordArr){
+  let arr = 
+  coordArr
   .filter(([x1,]) => x1 >= 0 && x1 < numCols)
   .filter(([,y1]) => y1 >= 0 && y1 < numRows)
   .map(([x1, y1]) => {return `${x1},${y1}`;});
 
-  return difference(new Set(neighbours), gridComponents.get(WALLS));
+  return Array.from(difference(new Set(arr), gridComponents.get(WALLS)));
 }
 
 // utility functions
