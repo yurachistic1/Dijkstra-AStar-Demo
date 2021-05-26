@@ -7,10 +7,12 @@ html, body {
   margin: 0;
   padding: 0;
   font-size: 2rem;
+  font-weight: 200;
 }
 
 h1 {
   margin: 0;
+  font-weight: 200;
 }
 
 body {
@@ -23,12 +25,42 @@ body {
   align-items: center;
 }
 
+h1 button {
+  all: unset;
+  font-size: inherit;
+  font-family: inherit;
+  border: 0;
+  padding: 0;
+  font-weight: 200;
+  background-color: inherit;
+}
+
+h1 button:hover {
+  font-weight: 500;
+  cursor: pointer;
+}
+
+h1 button::after {
+  display: block;
+  content: attr(aria-label);
+  font-weight: bold;
+  height: 1px;
+  color: transparent;
+  overflow: hidden;
+  visibility: hidden;
+}
+
+.active {
+  font-weight: 500;
+  color: #ee582a;
+}
+
 #controls{
   display: flex;
   justify-content: space-between;
 }
 
-button {
+#controls button {
   font-family: inherit;
   font-size: inherit;
   padding: 0.3rem 1rem;
@@ -36,9 +68,10 @@ button {
   border: 2px solid #ee582a;
   background-color: ivory;
   box-shadow: 1px 3px #999;
+  font-weight: 200;
 }
 
-button:active {
+#controls button:active {
   background-color: #fcf8c4;
   box-shadow: 1px 1px #666;
   transform: translateY(2px);

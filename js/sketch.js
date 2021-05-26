@@ -6,7 +6,7 @@ const APPROX_LINE_SPACING = 20; //target distance between gridlines (pixels)
 const WALLS = 1;
 const START = 2;
 const END = 3;
-const EDGE = 4;
+const FRINGE = 4;
 const EXPLORED = 5;
 const PATH = 6;
 
@@ -19,6 +19,7 @@ let isRunning;      // boolean to indicate if visualisation is in progress
 let movingStart;    // boolean to indicate start is being moved
 let movingEnd       // boolean to indicate end is being moved
 let slowDown;       // number of milliseconds A* is slowed downed by in each cycle
+let isDijkstra = true;     // boolean to indicate if the demo is for A* or dijkstra
 
 // setters
 
@@ -28,6 +29,10 @@ function switchEraser(){
 
 function setSlowDown(x){
   slowDown = x;
+}
+
+function changeDemo(){
+  isDijkstra = !isDijkstra;
 }
 
 // p5js functions
@@ -94,7 +99,7 @@ function init(){
   gridComponents.set(START, [floor(numCols / 10), floor(numRows / 2)]);
   gridComponents.set(END, [floor(numCols * 0.9), floor(numRows / 2)]);
   gridComponents.set(WALLS, new Set());
-  gridComponents.set(EDGE, new Set());
+  gridComponents.set(FRINGE, new Set());
   gridComponents.set(EXPLORED, new Set());
   gridComponents.set(PATH, new Set())
 
@@ -119,8 +124,8 @@ function drawGrid(){
   }
 
   // all the different types of cells
-  const edgeCells = gridComponents.get(EDGE);
-  drawCells(edgeCells, 'rgba(240, 228, 66, 1)');
+  const fringeCells = gridComponents.get(FRINGE);
+  drawCells(fringeCells, 'rgba(240, 228, 66, 1)');
 
   const exploredCells = gridComponents.get(EXPLORED);
   drawCells(exploredCells, "rgba(86, 180, 233, 1)");
@@ -156,7 +161,7 @@ async function reset(){
   isRunning = false;
   await sleep(300);
 
-  gridComponents.set(EDGE, new Set());
+  gridComponents.set(FRINGE, new Set());
   gridComponents.set(EXPLORED, new Set());
   gridComponents.set(PATH, new Set())
 }
@@ -204,17 +209,13 @@ function moveEnd(){
 
 async function reconstructPath(cameFrom, current){
 
-  let total = 0;
-
   while (cameFrom.has(current)){
       if(!isRunning) {return;}
       current = cameFrom.get(current);
       gridComponents.get(PATH).add(current);
-      total += 1;
       await sleep(slowDown);
   }
   isRunning = false;
-  console.log(total)
 }
 
 // A* finds a path from start to goal.
@@ -231,11 +232,11 @@ async function A_Star(){
   let openSet = new MinHeap();
   openSet.insert(new Node(distanceStartToGoal, `${startX},${startY}`, 1));
 
-  // For node n, cameFrom[n] is the node immediately preceding it on the cheapest EDGE from start
+  // For node n, cameFrom[n] is the node immediately preceding it on the cheapest path from start
   // to n currently known.
   let cameFrom = new Map();
 
-  // For node n, gScore[n] is the cost of the cheapest EDGE from start to n currently known.
+  // For node n, gScore[n] is the cost of the cheapest path from start to n currently known.
   let gScore = new Map();
   gScore.set(`${startX},${startY}`, 0);
 
@@ -252,7 +253,7 @@ async function A_Star(){
     await sleep(slowDown);
 
     let current = openSet.extractMin().value; 
-    gridComponents.get(EDGE).delete(current);
+    gridComponents.get(FRINGE).delete(current);
     gridComponents.get(EXPLORED).add(current);
     const [currX, currY] = current.split(",");
     
@@ -272,13 +273,13 @@ async function A_Star(){
         cameFrom.set(neighbour, current);
         gScore.set(neighbour, tentative_gScore);
 
-        let heuristic = distance(neighbourX, neighbourY, endX, endY);
+        let heuristic = isDijkstra ? 0 : distance(neighbourX, neighbourY, endX, endY);
 
         fScore.set(neighbour, +getWithDefault(gScore, neighbour, Infinity) + heuristic)
         let node = new Node(fScore.get(neighbour), neighbour, fScore.size);
         if (!openSet.has(node)){
             openSet.insert(node);
-            gridComponents.get(EDGE).add(neighbour);
+            gridComponents.get(FRINGE).add(neighbour);
         }
       }
     }
@@ -355,4 +356,4 @@ async function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-export {init, switchEraser, A_Star, reset, setSlowDown, isErasing}
+export {init, switchEraser, A_Star, reset, setSlowDown, changeDemo, isDijkstra, isErasing}
