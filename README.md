@@ -1,5 +1,5 @@
 ## Visualisation of Dijkstra and A* Pathfinding Algorithms
-Can be viewed [here](yurachistic1.github.io/dijkstra-astar-demo/).
+Can be viewed [here](https://yurachistic1.github.io/Dijkstra-AStar-Demo/).
 
 ### How To Use
 - Click on the algorithm name in the page header to select A* or Dijkstra. 
