@@ -18,7 +18,7 @@ let isErasing;      // eraser boolean toggle
 let isRunning;      // boolean to indicate if visualisation is in progress
 let movingStart;    // boolean to indicate start is being moved
 let movingEnd       // boolean to indicate end is being moved
-let slowDown;       // number of milliseconds A* is slowed downed by in each cycle
+let slowDown;       // number of milliseconds A* is slowed down by in each cycle
 let isDijkstra = true;     // boolean to indicate if the demo is for A* or dijkstra
 
 // setters
