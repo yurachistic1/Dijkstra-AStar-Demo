@@ -10,13 +10,13 @@ Can be viewed [here](https://yurachistic1.github.io/Dijkstra-AStar-Demo/).
 ### Colour Legend 
 | Colour | Description |
 | :-: | ----------- |
-| 🟩  | Start position |
-| 🟥 | End position |
-| ⬛ | Walls |
-| 🟦  | Explored nodes |
-| 🟨  | Fringe or nodes in the open set of the algorithm |
-|🟪| Path|
-|⬜| Unexplored nodes |
+|  :green_square: | Start position |
+|  :red_square: | End position |
+|  :black_large_square: | Walls |
+|  :blue_square: | Explored nodes |
+|  :yellow_square: | Fringe or nodes in the open set of the algorithm |
+|  :purple_square: | Path|
+|  :white_large_square: | Unexplored nodes |
 
 Note: I tried to pick [colourblind suitable](https://mikemol.github.io/technique/colorblind/2018/02/11/color-safe-palette.html) colours, the tones in the visualisations differ from these available emojis. 
 
